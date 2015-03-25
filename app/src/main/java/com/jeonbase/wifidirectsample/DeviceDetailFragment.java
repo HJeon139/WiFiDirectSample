@@ -48,6 +48,13 @@ package com.jeonbase.wifidirectsample;
         import java.io.OutputStream;
         import java.net.ServerSocket;
         import java.net.Socket;
+        import java.security.InvalidKeyException;
+        import java.security.NoSuchAlgorithmException;
+
+        import javax.crypto.Cipher;
+        import javax.crypto.CipherInputStream;
+        import javax.crypto.NoSuchPaddingException;
+        import javax.crypto.spec.SecretKeySpec;
 
 /**
  * A fragment that manages a particular peer and allows interaction with device
@@ -246,7 +253,26 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
 
                 Log.d(WiFiDirectActivity.TAG, "server: copying files " + f.toString());
                 InputStream inputstream = client.getInputStream();
-                copyFile(inputstream, new FileOutputStream(f));
+                // USE CIPHER INPUT STREAM
+                SecretKeySpec sks = new SecretKeySpec("MyDifficultPass".getBytes(), "AES");
+                Cipher cipher = null;
+                try {
+                    cipher = Cipher.getInstance("AES");
+                } catch (NoSuchAlgorithmException e) {
+                    e.printStackTrace();
+                } catch (NoSuchPaddingException e) {
+                    e.printStackTrace();
+                }
+                try {
+                    cipher.init(Cipher.DECRYPT_MODE, sks);
+                } catch (InvalidKeyException e) {
+                    e.printStackTrace();
+                }
+                CipherInputStream cis = new CipherInputStream(inputstream, cipher);
+
+                //copyFile(inputstream, new FileOutputStream(f));
+                // USE cipher input stream
+                copyFile(cis, new FileOutputStream(f));
                 serverSocket.close();
                 return f.getAbsolutePath();
             } catch (IOException e) {

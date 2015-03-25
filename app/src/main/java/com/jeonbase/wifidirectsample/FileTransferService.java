@@ -22,6 +22,13 @@ package com.jeonbase.wifidirectsample;
         import java.io.OutputStream;
         import java.net.InetSocketAddress;
         import java.net.Socket;
+        import java.security.InvalidKeyException;
+        import java.security.NoSuchAlgorithmException;
+
+        import javax.crypto.Cipher;
+        import javax.crypto.CipherOutputStream;
+        import javax.crypto.NoSuchPaddingException;
+        import javax.crypto.spec.SecretKeySpec;
 
 /**
  * A service that process each file transfer request i.e Intent by opening a
@@ -69,6 +76,29 @@ public class FileTransferService extends IntentService {
 
                 Log.d(WiFiDirectActivity.TAG, "Client socket - " + socket.isConnected());
                 OutputStream stream = socket.getOutputStream();
+
+                // CIPHER THE OUTPUT STREAM
+                // Length is 16 byte
+                // Careful when taking user input!!! http://stackoverflow.com/a/3452620/1188357
+                SecretKeySpec sks = new SecretKeySpec("MyDifficultPass".getBytes(), "AES");
+                // Create cipher
+                Cipher cipher = null;
+                try {
+                    cipher = Cipher.getInstance("AES");
+                } catch (NoSuchAlgorithmException e) {
+                    e.printStackTrace();
+                } catch (NoSuchPaddingException e) {
+                    e.printStackTrace();
+                }
+                try {
+                    cipher.init(Cipher.ENCRYPT_MODE, sks);
+                } catch (InvalidKeyException e) {
+                    e.printStackTrace();
+                }
+                // Wrap the output stream
+                CipherOutputStream cos = new CipherOutputStream(stream, cipher);
+
+
                 ContentResolver cr = context.getContentResolver();
                 InputStream is = null;
                 try {
@@ -76,7 +106,9 @@ public class FileTransferService extends IntentService {
                 } catch (FileNotFoundException e) {
                     Log.d(WiFiDirectActivity.TAG, e.toString());
                 }
-                DeviceDetailFragment.copyFile(is, stream);
+                //DeviceDetailFragment.copyFile(is, stream);
+                // USE CipherOutputStream
+                DeviceDetailFragment.copyFile(is, cos);
                 Log.d(WiFiDirectActivity.TAG, "Client: Data written");
             } catch (IOException e) {
                 Log.e(WiFiDirectActivity.TAG, e.getMessage());
