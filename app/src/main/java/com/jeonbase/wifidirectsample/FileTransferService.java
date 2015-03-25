@@ -72,7 +72,7 @@ public class FileTransferService extends IntentService {
                 // CIPHER THE OUTPUT STREAM
                 // Length is 16 byte
                 // Careful when taking user input!!! http://stackoverflow.com/a/3452620/1188357
-                SecretKeySpec sks = new SecretKeySpec("MyDifficultPass".getBytes(), "AES");
+                SecretKeySpec sks = new SecretKeySpec("MyDifficultPassw".getBytes(), "AES");
                 // Create cipher
                 Cipher cipher = null;
                 try {

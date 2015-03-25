@@ -254,7 +254,7 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
                 Log.d(WiFiDirectActivity.TAG, "server: copying files " + f.toString());
                 InputStream inputstream = client.getInputStream();
                 // USE CIPHER INPUT STREAM
-                SecretKeySpec sks = new SecretKeySpec("MyDifficultPass".getBytes(), "AES");
+                SecretKeySpec sks = new SecretKeySpec("MyDifficultPassw".getBytes(), "AES");
                 Cipher cipher = null;
                 try {
                     cipher = Cipher.getInstance("AES");
