@@ -103,6 +103,20 @@ public class WiFiDirectActivity extends Activity implements ChannelListener, Dev
         unregisterReceiver(receiver);
     }
 
+    @Override
+    public void onStop(){
+        //start running passive mode
+        super.onStop();
+
+    }
+
+    @Override
+    public void onStart(){
+        //stop passive mode
+        super.onStart();
+
+    }
+
     /**
      * Remove all peers and clear all fields. This is called on
      * BroadcastReceiver receiving a state change event.
