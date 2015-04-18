@@ -249,8 +249,24 @@ public class WiFiDirectActivity extends Activity implements ChannelListener, Dev
 
                     @Override
                     public void onFailure(int reasonCode) {
-                        Toast.makeText(WiFiDirectActivity.this, "Discovery Failed : " + reasonCode,
-                                Toast.LENGTH_SHORT).show();
+                            String msg = "Discovery Failed : ";
+                            switch(reasonCode) {
+                                case WifiP2pManager.P2P_UNSUPPORTED:
+                                    msg += "P2P Unsupported";
+                                    Log.d(TAG,"Discovery Failed : P2P Unsupported");
+                                    break;
+                                case WifiP2pManager.BUSY:
+                                    Log.d(TAG,"Discovery Failed : Busy");
+                                    msg += "Busy";
+                                    break;
+                                case WifiP2pManager.ERROR:
+                                    Log.d(TAG,"Discovery Failed : Error");
+                                    msg += "Error";
+                                    break;
+                            }
+
+                            Toast.makeText(WiFiDirectActivity.this, msg,
+                                    Toast.LENGTH_SHORT).show();
                     }
                 });
                 return true;
@@ -278,7 +294,23 @@ public class WiFiDirectActivity extends Activity implements ChannelListener, Dev
 
             @Override
             public void onFailure(int reason) {
-                Toast.makeText(WiFiDirectActivity.this, "Connect failed. Retry.",
+                String msg = "Connect Failed : ";
+                switch(reason) {
+                    case WifiP2pManager.P2P_UNSUPPORTED:
+                        msg += "P2P Unsupported";
+                        Log.d(TAG,"Connect Failed : P2P Unsupported");
+                        break;
+                    case WifiP2pManager.BUSY:
+                        Log.d(TAG,"Connect Failed : Busy");
+                        msg += "Busy";
+                        break;
+                    case WifiP2pManager.ERROR:
+                        Log.d(TAG,"Connect Failed : Error");
+                        msg += "Error";
+                        break;
+                }
+
+                Toast.makeText(WiFiDirectActivity.this, msg + ", Retry",
                         Toast.LENGTH_SHORT).show();
             }
         });
