@@ -177,6 +177,7 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
             // The other device acts as the client. In this case, we enable the
             // get file button.
             mContentView.findViewById(R.id.btn_start_client).setVisibility(View.VISIBLE);
+            mContentView.findViewById(R.id.btn_start_message).setVisibility(View.VISIBLE);
             ((TextView) mContentView.findViewById(R.id.status_text)).setText(getResources()
                     .getString(R.string.client_text));
         }
@@ -214,6 +215,7 @@ public class DeviceDetailFragment extends Fragment implements ConnectionInfoList
         view = (TextView) mContentView.findViewById(R.id.status_text);
         view.setText(R.string.empty);
         mContentView.findViewById(R.id.btn_start_client).setVisibility(View.GONE);
+        mContentView.findViewById(R.id.btn_start_message).setVisibility(View.GONE);
         this.getView().setVisibility(View.GONE);
     }
 
