@@ -37,11 +37,11 @@ public class WiFiDirectBroadcastReceiver extends BroadcastReceiver {
     private Channel channel;
     private WiFiDirectActivity activity;
 
-    /**
-     * @param manager WifiP2pManager system service
-     * @param channel Wifi p2p channel
-     * @param activity activity associated with the receiver
-     */
+
+    public WiFiDirectBroadcastReceiver(){
+        super();
+    }
+
     public WiFiDirectBroadcastReceiver(WifiP2pManager manager, Channel channel,
                                        WiFiDirectActivity activity) {
         super();
@@ -58,6 +58,7 @@ public class WiFiDirectBroadcastReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
+        WakefulReceiver alarmWake = new WakefulReceiver();
         if (WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION.equals(action)) {
 
             // UI update to indicate wifi p2p status.
@@ -108,6 +109,8 @@ public class WiFiDirectBroadcastReceiver extends BroadcastReceiver {
             fragment.updateThisDevice((WifiP2pDevice) intent.getParcelableExtra(
                     WifiP2pManager.EXTRA_WIFI_P2P_DEVICE));
 
+        } else if(intent.getAction().equals("android.intent.action.BOOT_COMPLETED")){
+            alarmWake.setAlarm(context);
         }
     }
 }

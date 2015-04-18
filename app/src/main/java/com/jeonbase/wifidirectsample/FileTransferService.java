@@ -7,10 +7,13 @@ package com.jeonbase.wifidirectsample;
 // Copyright 2011 Google Inc. All Rights Reserved.
 
         import android.app.IntentService;
+        import android.app.NotificationManager;
         import android.content.ContentResolver;
         import android.content.Context;
         import android.content.Intent;
         import android.net.Uri;
+        import android.os.Bundle;
+        import android.support.v4.app.NotificationCompat;
         import android.util.Log;
 
         import java.io.FileNotFoundException;
@@ -32,6 +35,10 @@ public class FileTransferService extends IntentService {
     public static final String EXTRAS_FILE_PATH = "file_url";
     public static final String EXTRAS_GROUP_OWNER_ADDRESS = "go_host";
     public static final String EXTRAS_GROUP_OWNER_PORT = "go_port";
+
+    public static final int NOTIFICATION_ID = 1;
+    private NotificationManager mNotificationManager;
+    NotificationCompat.Builder builder;
 
     public FileTransferService(String name) {
         super(name);
@@ -87,7 +94,27 @@ public class FileTransferService extends IntentService {
             }
 
         }else if(intent.getAction().equals(ACTION_PASSIVE)){
+            Bundle extras = intent.getExtras();
+            //check for peers
 
+            //check if peer is in recent peer list.
+
+            //true
+                //is timestamp less than a day?
+                    //true
+                        //ignore peer
+                    //false
+                        //send peer primary file
+                        //receive peer primary file
+                        //update timestamp
+            //false
+                //send peer primary file
+
+                //receive peer primary file
+
+                //add peers to timestamp table
+
+            WakefulReceiver.completeWakefulIntent(intent);
         }
     }
 }

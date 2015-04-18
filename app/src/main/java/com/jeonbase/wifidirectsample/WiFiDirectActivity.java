@@ -50,7 +50,7 @@ package com.jeonbase.wifidirectsample;
  */
 public class WiFiDirectActivity extends Activity implements ChannelListener, DeviceActionListener {
 
-    public static final String TAG = "wifidirectdemo";
+    public static final String TAG = "Micronet Demo";
     private WifiP2pManager manager;
     private boolean isWifiP2pEnabled = false;
     private boolean retryChannel = false;
@@ -99,21 +99,26 @@ public class WiFiDirectActivity extends Activity implements ChannelListener, Dev
 
     @Override
     public void onPause() {
+        Log.d(WiFiDirectActivity.TAG, "Pausing...");
         super.onPause();
+
         unregisterReceiver(receiver);
     }
 
     @Override
     public void onStop(){
         //start running passive mode
+        Log.d(WiFiDirectActivity.TAG, "Stopping...");
         super.onStop();
-
+        WakefulReceiver passive = new WakefulReceiver();
+        passive.setAlarm(this);
     }
 
     @Override
     public void onStart(){
         //stop passive mode
         super.onStart();
+        Log.d(WiFiDirectActivity.TAG, "Starting...");
 
     }
 
