@@ -21,9 +21,11 @@ package com.jeonbase.wifidirectsample;
 
         import android.app.Activity;
         import android.content.BroadcastReceiver;
+        import android.content.ComponentName;
         import android.content.Context;
         import android.content.Intent;
         import android.content.IntentFilter;
+        import android.content.pm.PackageManager;
         import android.net.wifi.p2p.WifiP2pConfig;
         import android.net.wifi.p2p.WifiP2pDevice;
         import android.net.wifi.p2p.WifiP2pManager;
@@ -111,7 +113,42 @@ public class WiFiDirectActivity extends Activity implements ChannelListener, Dev
         Log.d(WiFiDirectActivity.TAG, "Stopping...");
         super.onStop();
         WakefulReceiver passive = new WakefulReceiver();
+
+        ComponentName wakefulreceiver = new ComponentName(this, WakefulReceiver.class);
+        ComponentName wakereceiver = new ComponentName(this, WakeReceiver.class);
+        ComponentName passiveS = new ComponentName(this, PassiveScheduler.class);
+        PackageManager pm = getPackageManager();
+
+        pm.setComponentEnabledSetting(wakefulreceiver,
+                PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                PackageManager.DONT_KILL_APP);
+        pm.setComponentEnabledSetting(wakereceiver,
+                PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                PackageManager.DONT_KILL_APP);
+        pm.setComponentEnabledSetting(passiveS,
+                PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                PackageManager.DONT_KILL_APP);
+
         passive.setAlarm(this);
+    }
+
+    @Override
+    public void onDestroy(){
+        ComponentName wakefulreceiver = new ComponentName(this, WakefulReceiver.class);
+        ComponentName wakereceiver = new ComponentName(this, WakeReceiver.class);
+        ComponentName passiveS = new ComponentName(this, PassiveScheduler.class);
+        PackageManager pm = getPackageManager();
+
+        pm.setComponentEnabledSetting(wakefulreceiver,
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                PackageManager.DONT_KILL_APP);
+        pm.setComponentEnabledSetting(wakereceiver,
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                PackageManager.DONT_KILL_APP);
+        pm.setComponentEnabledSetting(passiveS,
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                PackageManager.DONT_KILL_APP);
+        super.onDestroy();
     }
 
     @Override
@@ -119,7 +156,20 @@ public class WiFiDirectActivity extends Activity implements ChannelListener, Dev
         //stop passive mode
         super.onStart();
         Log.d(WiFiDirectActivity.TAG, "Starting...");
+        ComponentName wakefulreceiver = new ComponentName(this, WakefulReceiver.class);
+        ComponentName wakereceiver = new ComponentName(this, WakeReceiver.class);
+        ComponentName passive = new ComponentName(this, PassiveScheduler.class);
+        PackageManager pm = getPackageManager();
 
+        pm.setComponentEnabledSetting(wakefulreceiver,
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                PackageManager.DONT_KILL_APP);
+        pm.setComponentEnabledSetting(wakereceiver,
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                PackageManager.DONT_KILL_APP);
+        pm.setComponentEnabledSetting(passive,
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                PackageManager.DONT_KILL_APP);
     }
 
     /**
