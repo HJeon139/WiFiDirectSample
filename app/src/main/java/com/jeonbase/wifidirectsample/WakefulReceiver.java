@@ -58,9 +58,9 @@ public class WakefulReceiver extends WakefulBroadcastReceiver{
 
         //interval = 5s
         Log.d(WiFiDirectActivity.TAG, "Time: "+Long.toString(SystemClock.elapsedRealtime()));
-        alarmMgr.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime()+5000,alarmIntent);
+        alarmMgr.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime() +10000,alarmIntent);
 
-        ComponentName receiver = new ComponentName(context, WiFiDirectBroadcastReceiver.class);
+        ComponentName receiver = new ComponentName(context, WakeReceiver.class);
         PackageManager pm = context.getPackageManager();
 
         pm.setComponentEnabledSetting(receiver,

@@ -56,6 +56,7 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
 
         resetData();
 
+
         Log.d(WiFiDirectActivity.TAG, "Passive: End...");
         WakefulReceiver.completeWakefulIntent(intent);
 

@@ -34,9 +34,10 @@
             </intent-filter>
         </activity>
         <service android:enabled="true" android:name=".FileTransferService" />
-        <service android:enabled="true" android:name=".PassiveScheduler"/>
+        <service android:enabled="false" android:name=".PassiveScheduler"/>
+        <receiver android:enabled="false" android:name=".WakeReceiver"></receiver>
         <receiver android:enabled="true" android:name=".WiFiDirectBroadcastReceiver"></receiver>
-        <receiver android:name=".WakefulReceiver"></receiver>
+        <receiver android:enabled="false" android:name=".WakefulReceiver"></receiver>
     </application>
 
 </manifest>

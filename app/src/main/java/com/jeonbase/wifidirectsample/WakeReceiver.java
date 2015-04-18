@@ -15,9 +15,8 @@ public class WakeReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        if (intent.getAction().equals(ACTION_PASSIVE))
-        {
+
             alarm.setAlarm(context);
-        }
+
     }
 }
