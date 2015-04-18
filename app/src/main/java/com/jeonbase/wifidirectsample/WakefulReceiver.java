@@ -15,7 +15,8 @@ import android.util.Log;
 import java.util.Calendar;
 
 /**
- * Created by gamer_000 on 4/17/2015.
+ * Created by Hohyun on 4/17/2015.
+ * Handles Wake->Passive->Sleep
  */
 public class WakefulReceiver extends WakefulBroadcastReceiver{
     private WifiP2pManager manager;
@@ -44,7 +45,7 @@ public class WakefulReceiver extends WakefulBroadcastReceiver{
         Intent service = new Intent(context, PassiveScheduler.class);
         //service.setAction(FileTransferService.ACTION_PASSIVE);
         startWakefulService(context,service);
-        //Log.d(WiFiDirectActivity.TAG, "Wakefulservice init done");
+        Log.d(WiFiDirectActivity.TAG, "Wakefulservice done");
     }
 
     public void setAlarm(Context context){
@@ -56,6 +57,7 @@ public class WakefulReceiver extends WakefulBroadcastReceiver{
         calendar.setTimeInMillis(System.currentTimeMillis());
 
         //interval = 5s
+        Log.d(WiFiDirectActivity.TAG, "Time: "+Long.toString(SystemClock.elapsedRealtime()));
         alarmMgr.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime()+5000,alarmIntent);
 
         ComponentName receiver = new ComponentName(context, WiFiDirectBroadcastReceiver.class);

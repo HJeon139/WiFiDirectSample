@@ -58,7 +58,7 @@ public class WiFiDirectBroadcastReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
-        WakefulReceiver alarmWake = new WakefulReceiver();
+        /*WakefulReceiver alarmWake = new WakefulReceiver();*/
         if (WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION.equals(action)) {
 
             // UI update to indicate wifi p2p status.
@@ -109,8 +109,8 @@ public class WiFiDirectBroadcastReceiver extends BroadcastReceiver {
             fragment.updateThisDevice((WifiP2pDevice) intent.getParcelableExtra(
                     WifiP2pManager.EXTRA_WIFI_P2P_DEVICE));
 
-        } else if(intent.getAction().equals("android.intent.action.BOOT_COMPLETED")){
+        } /*else if(intent.getAction().equals("android.intent.action.BOOT_COMPLETED")){
             alarmWake.setAlarm(context);
-        }
+        }*/
     }
 }
