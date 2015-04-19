@@ -7,6 +7,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.net.Uri;
 import android.net.wifi.WpsInfo;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
@@ -15,6 +16,7 @@ import android.net.wifi.p2p.WifiP2pManager;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -73,17 +75,41 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
         channel = manager.initialize(this, getMainLooper(), null);
 
         resetData();
-        Log.d(WiFiDirectActivity.TAG, "peer count: "+Integer.toString(p_peers.size()));
-        if (p_peers.size()>0){
-            stopDiscovery();
-            for(int i=0; i<p_peers.size(); i++){
-                connect(i);
-            }
-        }
+
         //broadcastIntent.setAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
         Intent broadcastIntent = new Intent(this, WakeReceiver.class);
         sendBroadcast(broadcastIntent);
         //stopDiscovery();
+
+        Log.d(WiFiDirectActivity.TAG, "peer count: " + Integer.toString(p_peers.size()));
+        if (p_peers.size()>0){
+            stopDiscovery();
+            for(int i=0; i<p_peers.size(); i++){
+                connect(i);
+                //send data
+                    // FileTransferService.
+                Log.d(WiFiDirectActivity.TAG, "Sending File");
+                //Uri uri = data.getData();
+                //TextView statusText = (TextView) mContentView.findViewById(R.id.status_text);
+                //statusText.setText("Sending: " + uri);
+
+                Log.d(WiFiDirectActivity.TAG, "Intent----------- " + "content://com.android.providers.media.documents/document/image%3A15716");
+                Intent serviceIntent = new Intent(this, FileTransferService.class);
+                serviceIntent.setAction(FileTransferService.ACTION_SEND_FILE);
+                serviceIntent.putExtra(FileTransferService.EXTRAS_FILE_PATH, "content://com.android.providers.media.documents/document/image%3A15716");
+                serviceIntent.putExtra(FileTransferService.EXTRAS_GROUP_OWNER_ADDRESS,
+                        p_peers.get(i).deviceAddress);
+                serviceIntent.putExtra(FileTransferService.EXTRAS_GROUP_OWNER_PORT, 8988);
+                this.startService(serviceIntent);
+
+                //listen
+                new FileServerAsyncTask(this).execute();
+
+                //disconnect
+                disconnect();
+            }
+        }
+
         Log.d(WiFiDirectActivity.TAG, "Passive: End...");
 
         WakefulReceiver.completeWakefulIntent(intent);
@@ -190,7 +216,7 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
 
             @Override
             public void onSuccess() {
-                // WiFiDirectBroadcastReceiver will notify us. Ignore for now.
+                Log.d(WiFiDirectActivity.TAG, "Connected" );
             }
 
             @Override
@@ -229,6 +255,7 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
             @Override
             public void onSuccess() {
                 /*fragment.getView().setVisibility(View.GONE);*/
+                Log.d(WiFiDirectActivity.TAG, "Disconnected");
             }
 
         });
@@ -244,8 +271,12 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
 
                 @Override
                 public void onSuccess() {
-                    sendNotification("Micronet Status Update:", "Discovery Initiated");
+                    sendNotification("Micronet Status Update:", "Scanning for peers");
                     Log.d(WiFiDirectActivity.TAG, "Discovery Initiated");
+                    if (manager != null) {
+                        manager.requestPeers(channel, peerListListener);
+                        Log.d(WiFiDirectActivity.TAG, "P2P peers changed");
+                    }
 
                 }
 
@@ -265,7 +296,7 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
                         default:
                             reason = "Undefined failure error code: "+reasonCode;
                     }
-                    sendNotification("Micronet Status Update:", "Discovery Failed: "+reason);
+                    sendNotification("Micronet Status Update:", "Scanning Failed: "+reason);
                     Log.d(WiFiDirectActivity.TAG, "Discovery Failed: "+reason);
                 }
             });

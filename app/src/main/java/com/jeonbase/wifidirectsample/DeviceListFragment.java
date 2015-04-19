@@ -50,6 +50,7 @@ public class DeviceListFragment extends ListFragment implements PeerListListener
     View mContentView = null;
     private WifiP2pDevice device;
 
+
     private byte bNA;
 
     @Override
@@ -65,6 +66,9 @@ public class DeviceListFragment extends ListFragment implements PeerListListener
         return mContentView;
     }
 
+    public int peerSize(){
+        return peers.size();
+    }
     /**
      * @return this device
      */
