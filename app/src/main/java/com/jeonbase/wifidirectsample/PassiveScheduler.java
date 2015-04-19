@@ -7,6 +7,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.net.wifi.WpsInfo;
 import android.net.wifi.p2p.WifiP2pConfig;
@@ -57,17 +58,17 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
 
 
             // InetAddress from WifiP2pInfo struct.
-            if(info != null){
-                Log.d(TAG, "Group Owner IP - " + info.groupOwnerAddress.getHostAddress());
+            try{
+                Log.d(TAG, "Group Owner IP - " + PassiveScheduler.this.info.groupOwnerAddress.getHostAddress());
 
                 // After the group negotiation, we assign the group owner as the file
                 // server. The file server is single threaded, single connection server
                 // socket.
-                if (info.groupFormed && info.isGroupOwner) {
+                if (PassiveScheduler.this.info.groupFormed && PassiveScheduler.this.info.isGroupOwner) {
                     //Listen
                     new FileServerAsyncTask(PassiveScheduler.this).execute();
                     Log.d(WiFiDirectActivity.TAG, "Listening for File");
-                } else if (info.groupFormed) {
+                } else if (PassiveScheduler.this.info.groupFormed) {
                     // The device acts as the client. Send File
                     //send data
                     sendfile();
@@ -75,8 +76,8 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
                     //disconnect
                     disconnect();
                 }
-            }else{
-                Log.e(TAG, "info file in onConnectionInfoAvailable is null");
+            }catch(NullPointerException e){
+                Log.e(TAG, e.getMessage());
             }
 
         }
@@ -116,18 +117,48 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
         sendBroadcast(broadcastIntent);
         //stopDiscovery();
 
+        NetworkInfo networkInfo = (NetworkInfo) intent
+                .getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
+
+
+
         Log.d(WiFiDirectActivity.TAG, "peer count: " + Integer.toString(p_peers.size()));
         if (p_peers.size()>0){
             stopDiscovery();
             for(int i=0; i<p_peers.size(); i++){
                 connect(i);
+                networkInfo = (NetworkInfo) intent
+                        .getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
+                if(networkInfo != null){
+                    if (networkInfo.isConnected()) {
+
+                        // we are connected with the other device, request connection
+                        // info to find group owner IP
+
+                        manager.requestConnectionInfo(channel, connectionListener);
+                    } else {
+                        // It's a disconnect
+                        resetData();
+                    }
+                }
+
             }
         }else{
-            if(info != null){
-                if(info.groupFormed){
+            try{
+                if(networkInfo.isConnected()){
                     disconnect();
                 }
+            }catch(NullPointerException e){
+                Log.e(TAG, e.getMessage());
+                try{
+                    if(info.groupFormed){
+                        disconnect();
+                    }
+                }catch(NullPointerException e1) {
+                    Log.e(TAG, e1.getMessage());
+                }
             }
+
 
         }
 
@@ -240,6 +271,7 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
             @Override
             public void onSuccess() {
                 Log.d(WiFiDirectActivity.TAG, "Connected" );
+
                 manager.requestConnectionInfo(channel, connectionListener);
                 transfer();
             }
