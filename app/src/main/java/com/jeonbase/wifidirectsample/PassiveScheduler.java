@@ -76,7 +76,9 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
         Log.d(WiFiDirectActivity.TAG, "peer count: "+Integer.toString(p_peers.size()));
         if (p_peers.size()>0){
             stopDiscovery();
-
+            for(int i=0; i<p_peers.size(); i++){
+                connect(i);
+            }
         }
         //broadcastIntent.setAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
         Intent broadcastIntent = new Intent(this, WakeReceiver.class);
