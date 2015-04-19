@@ -57,23 +57,28 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
 
 
             // InetAddress from WifiP2pInfo struct.
-            Log.d(TAG, "Group Owner IP - " + info.groupOwnerAddress.getHostAddress());
+            if(info != null){
+                Log.d(TAG, "Group Owner IP - " + info.groupOwnerAddress.getHostAddress());
 
-            // After the group negotiation, we assign the group owner as the file
-            // server. The file server is single threaded, single connection server
-            // socket.
-            if (info.groupFormed && info.isGroupOwner) {
-                //Listen
-                new FileServerAsyncTask(PassiveScheduler.this).execute();
-                Log.d(WiFiDirectActivity.TAG, "Listening for File");
-            } else if (info.groupFormed) {
-                // The device acts as the client. Send File
-                //send data
-                sendfile();
+                // After the group negotiation, we assign the group owner as the file
+                // server. The file server is single threaded, single connection server
+                // socket.
+                if (info.groupFormed && info.isGroupOwner) {
+                    //Listen
+                    new FileServerAsyncTask(PassiveScheduler.this).execute();
+                    Log.d(WiFiDirectActivity.TAG, "Listening for File");
+                } else if (info.groupFormed) {
+                    // The device acts as the client. Send File
+                    //send data
+                    sendfile();
 
-                //disconnect
-                disconnect();
+                    //disconnect
+                    disconnect();
+                }
+            }else{
+                Log.e(TAG, "info file in onConnectionInfoAvailable is null");
             }
+
         }
     };
 
@@ -118,7 +123,12 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
                 connect(i);
             }
         }else{
-            disconnect();
+            if(info != null){
+                if(info.groupFormed){
+                    disconnect();
+                }
+            }
+
         }
 
         Log.d(WiFiDirectActivity.TAG, "Passive: End...");
@@ -207,6 +217,7 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
             @Override
             public void onSuccess() {
                 // WiFiDirectBroadcastReceiver will notify us. Ignore for now.
+                manager.requestConnectionInfo(channel, connectionListener);
                 transfer();
             }
 
@@ -267,18 +278,23 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
     }
 
     public void transfer(){
-        if (info.groupFormed && info.isGroupOwner) {
-            //Listen
-            new FileServerAsyncTask(this).execute();
-            Log.d(WiFiDirectActivity.TAG, "Listening for File");
-        } else if (info.groupFormed) {
-            // The device acts as the client. Send File
-            //send data
-            sendfile();
+        if(info != null){
+            if (info.groupFormed && info.isGroupOwner) {
+                //Listen
+                new FileServerAsyncTask(this).execute();
+                Log.d(WiFiDirectActivity.TAG, "Listening for File");
+            } else if (info.groupFormed) {
+                // The device acts as the client. Send File
+                //send data
+                sendfile();
 
-            //disconnect
-            disconnect();
+                //disconnect
+                disconnect();
+            }
+        }else{
+            Log.e(WiFiDirectActivity.TAG, "info file is null");
         }
+
     }
 
     public void sendfile(){
