@@ -12,6 +12,7 @@ import android.net.wifi.WpsInfo;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
+import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
@@ -25,7 +26,7 @@ import java.util.List;
 /**
  * Created by Hohyun on 4/17/2015.
  */
-public class PassiveScheduler extends IntentService implements WifiP2pManager.ChannelListener, DeviceListFragment.DeviceActionListener {
+public class PassiveScheduler extends IntentService implements WifiP2pManager.ChannelListener, DeviceListFragment.DeviceActionListener, WifiP2pManager.ConnectionInfoListener {
 
     public PassiveScheduler(){
         super("PassiveScheduler");
@@ -45,7 +46,36 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
     private WifiP2pManager.Channel channel;
     private BroadcastReceiver receiver = null;
 
+    private WifiP2pInfo info;
+
     private List<WifiP2pDevice> p_peers = new ArrayList<WifiP2pDevice>();
+
+    private WifiP2pManager.ConnectionInfoListener connectionListener = new WifiP2pManager.ConnectionInfoListener(){
+        @Override
+        public void onConnectionInfoAvailable(final WifiP2pInfo info) {
+            PassiveScheduler.this.info = info;
+
+
+            // InetAddress from WifiP2pInfo struct.
+            Log.d(TAG, "Group Owner IP - " + info.groupOwnerAddress.getHostAddress());
+
+            // After the group negotiation, we assign the group owner as the file
+            // server. The file server is single threaded, single connection server
+            // socket.
+            if (info.groupFormed && info.isGroupOwner) {
+                //Listen
+                new FileServerAsyncTask(PassiveScheduler.this).execute();
+                Log.d(WiFiDirectActivity.TAG, "Listening for File");
+            } else if (info.groupFormed) {
+                // The device acts as the client. Send File
+                //send data
+                sendfile();
+
+                //disconnect
+                disconnect();
+            }
+        }
+    };
 
     private WifiP2pManager.PeerListListener peerListListener = new WifiP2pManager.PeerListListener() {
         @Override
@@ -86,28 +116,9 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
             stopDiscovery();
             for(int i=0; i<p_peers.size(); i++){
                 connect(i);
-                //send data
-                    // FileTransferService.
-                Log.d(WiFiDirectActivity.TAG, "Sending File");
-                //Uri uri = data.getData();
-                //TextView statusText = (TextView) mContentView.findViewById(R.id.status_text);
-                //statusText.setText("Sending: " + uri);
-
-                Log.d(WiFiDirectActivity.TAG, "Intent----------- " + "content://com.android.providers.media.documents/document/image%3A15716");
-                Intent serviceIntent = new Intent(this, FileTransferService.class);
-                serviceIntent.setAction(FileTransferService.ACTION_SEND_FILE);
-                serviceIntent.putExtra(FileTransferService.EXTRAS_FILE_PATH, "content://com.android.providers.media.documents/document/image%3A15716");
-                serviceIntent.putExtra(FileTransferService.EXTRAS_GROUP_OWNER_ADDRESS,
-                        p_peers.get(i).deviceAddress);
-                serviceIntent.putExtra(FileTransferService.EXTRAS_GROUP_OWNER_PORT, 8988);
-                this.startService(serviceIntent);
-
-                //listen
-                new FileServerAsyncTask(this).execute();
-
-                //disconnect
-                disconnect();
             }
+        }else{
+            disconnect();
         }
 
         Log.d(WiFiDirectActivity.TAG, "Passive: End...");
@@ -196,6 +207,7 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
             @Override
             public void onSuccess() {
                 // WiFiDirectBroadcastReceiver will notify us. Ignore for now.
+                transfer();
             }
 
             @Override
@@ -217,6 +229,8 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
             @Override
             public void onSuccess() {
                 Log.d(WiFiDirectActivity.TAG, "Connected" );
+                manager.requestConnectionInfo(channel, connectionListener);
+                transfer();
             }
 
             @Override
@@ -225,6 +239,63 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
                 Log.d(WiFiDirectActivity.TAG, "Connection Failed");
             }
         });
+    }
+
+    @Override
+    public void onConnectionInfoAvailable(final WifiP2pInfo info) {
+        this.info = info;
+
+
+        // InetAddress from WifiP2pInfo struct.
+        Log.d(TAG, "Group Owner IP - " + info.groupOwnerAddress.getHostAddress());
+
+        // After the group negotiation, we assign the group owner as the file
+        // server. The file server is single threaded, single connection server
+        // socket.
+        if (info.groupFormed && info.isGroupOwner) {
+            //Listen
+            new FileServerAsyncTask(this).execute();
+            Log.d(WiFiDirectActivity.TAG, "Listening for File");
+        } else if (info.groupFormed) {
+            // The device acts as the client. Send File
+            //send data
+            sendfile();
+
+            //disconnect
+            disconnect();
+        }
+    }
+
+    public void transfer(){
+        if (info.groupFormed && info.isGroupOwner) {
+            //Listen
+            new FileServerAsyncTask(this).execute();
+            Log.d(WiFiDirectActivity.TAG, "Listening for File");
+        } else if (info.groupFormed) {
+            // The device acts as the client. Send File
+            //send data
+            sendfile();
+
+            //disconnect
+            disconnect();
+        }
+    }
+
+    public void sendfile(){
+        // FileTransferService.
+        Log.d(WiFiDirectActivity.TAG, "Sending File");
+        //Uri uri = data.getData();
+        //TextView statusText = (TextView) mContentView.findViewById(R.id.status_text);
+        //statusText.setText("Sending: " + uri);
+
+        Log.d(WiFiDirectActivity.TAG, "Intent----------- " + "content://com.android.providers.media.documents/document/image%3A15716");
+        Intent serviceIntent = new Intent(this, FileTransferService.class);
+        serviceIntent.setAction(FileTransferService.ACTION_SEND_FILE);
+        serviceIntent.putExtra(FileTransferService.EXTRAS_FILE_PATH, "content://com.android.providers.media.documents/document/image%3A15716");
+        serviceIntent.putExtra(FileTransferService.EXTRAS_GROUP_OWNER_ADDRESS,
+                info.groupOwnerAddress.getHostAddress());
+        serviceIntent.putExtra(FileTransferService.EXTRAS_GROUP_OWNER_PORT, 8988);
+        this.startService(serviceIntent);
     }
 
     @Override

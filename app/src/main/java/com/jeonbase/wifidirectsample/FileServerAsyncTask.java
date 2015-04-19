@@ -124,7 +124,8 @@ public class FileServerAsyncTask extends AsyncTask<Void, Void, String> {
      */
     @Override
     protected void onPreExecute() {
-        statusText.setText("Opening a server socket");
+        //statusText.setText("Opening a server socket");
+        Log.d(WiFiDirectActivity.TAG, "Opening a server socket");
     }
 
     public static boolean copyFile(InputStream inputStream, OutputStream out) {
@@ -138,7 +139,7 @@ public class FileServerAsyncTask extends AsyncTask<Void, Void, String> {
             out.close();
             inputStream.close();
         } catch (IOException e) {
-            Log.d(WiFiDirectActivity.TAG, e.toString());
+            Log.e(WiFiDirectActivity.TAG, e.toString());
             return false;
         }
         return true;
