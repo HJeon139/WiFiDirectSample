@@ -123,12 +123,9 @@ public class WiFiDirectActivity extends Activity implements ChannelListener, Dev
         ComponentName wakefulreceiver = new ComponentName(this, WakefulReceiver.class);
         ComponentName wakereceiver = new ComponentName(this, WakeReceiver.class);
         ComponentName passiveS = new ComponentName(this, PassiveScheduler.class);
-        ComponentName breceiver = new ComponentName(this, WiFiDirectBroadcastReceiver.class);
         PackageManager pm = getPackageManager();
 
-        pm.setComponentEnabledSetting(breceiver,
-                PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-                PackageManager.DONT_KILL_APP);
+
         pm.setComponentEnabledSetting(wakefulreceiver,
                 PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
                 PackageManager.DONT_KILL_APP);
@@ -146,11 +143,11 @@ public class WiFiDirectActivity extends Activity implements ChannelListener, Dev
     public void onDestroy(){
         ComponentName wakefulreceiver = new ComponentName(this, WakefulReceiver.class);
         ComponentName wakereceiver = new ComponentName(this, WakeReceiver.class);
-        ComponentName passiveS = new ComponentName(this, PassiveScheduler.class);
+        //ComponentName passiveS = new ComponentName(this, PassiveScheduler.class);
         ComponentName breceiver = new ComponentName(this, WiFiDirectBroadcastReceiver.class);
         PackageManager pm = getPackageManager();
 
-        pm.setComponentEnabledSetting(breceiver,
+        /*pm.setComponentEnabledSetting(breceiver,
                 PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
                 PackageManager.DONT_KILL_APP);
         pm.setComponentEnabledSetting(wakefulreceiver,
@@ -158,10 +155,9 @@ public class WiFiDirectActivity extends Activity implements ChannelListener, Dev
                 PackageManager.DONT_KILL_APP);
         pm.setComponentEnabledSetting(wakereceiver,
                 PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-                PackageManager.DONT_KILL_APP);
-        pm.setComponentEnabledSetting(passiveS,
-                PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-                PackageManager.DONT_KILL_APP);
+                PackageManager.DONT_KILL_APP);*/
+        stopService(new Intent(this, PassiveScheduler.class));
+
         super.onDestroy();
     }
 
@@ -184,6 +180,7 @@ public class WiFiDirectActivity extends Activity implements ChannelListener, Dev
         pm.setComponentEnabledSetting(passive,
                 PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
                 PackageManager.DONT_KILL_APP);
+        stopService(new Intent(this, PassiveScheduler.class));
     }
 
     /**
@@ -249,7 +246,21 @@ public class WiFiDirectActivity extends Activity implements ChannelListener, Dev
 
                     @Override
                     public void onFailure(int reasonCode) {
-                        Toast.makeText(WiFiDirectActivity.this, "Discovery Failed : " + reasonCode,
+                        String reason;
+                        switch(reasonCode){
+                            case WifiP2pManager.P2P_UNSUPPORTED:
+                                reason = "WiFi P2P is not supported on this device.";
+                                break;
+                            case WifiP2pManager.BUSY:
+                                reason = "Framework is busy and unable to service this request.";
+                                break;
+                            case WifiP2pManager.ERROR:
+                                reason = "Internal Error.";
+                                break;
+                            default:
+                                reason = "Undefined failure error code: "+reasonCode;
+                        }
+                        Toast.makeText(WiFiDirectActivity.this, "Discovery Failed : " + reason,
                                 Toast.LENGTH_SHORT).show();
                     }
                 });
@@ -277,8 +288,22 @@ public class WiFiDirectActivity extends Activity implements ChannelListener, Dev
             }
 
             @Override
-            public void onFailure(int reason) {
-                Toast.makeText(WiFiDirectActivity.this, "Connect failed. Retry.",
+            public void onFailure(int reasonCode) {
+                String reason;
+                switch(reasonCode){
+                    case WifiP2pManager.P2P_UNSUPPORTED:
+                        reason = "WiFi P2P is not supported on this device.";
+                        break;
+                    case WifiP2pManager.BUSY:
+                        reason = "Framework is busy and unable to service this request.";
+                        break;
+                    case WifiP2pManager.ERROR:
+                        reason = "Internal Error.";
+                        break;
+                    default:
+                        reason = "Undefined failure error code: "+reasonCode;
+                }
+                Toast.makeText(WiFiDirectActivity.this, "Connect failed: "+reason,
                         Toast.LENGTH_SHORT).show();
             }
         });
@@ -293,7 +318,21 @@ public class WiFiDirectActivity extends Activity implements ChannelListener, Dev
 
             @Override
             public void onFailure(int reasonCode) {
-                Log.d(TAG, "Disconnect failed. Reason :" + reasonCode);
+                String reason;
+                switch(reasonCode){
+                    case WifiP2pManager.P2P_UNSUPPORTED:
+                        reason = "WiFi P2P is not supported on this device.";
+                        break;
+                    case WifiP2pManager.BUSY:
+                        reason = "Framework is busy and unable to service this request.";
+                        break;
+                    case WifiP2pManager.ERROR:
+                        reason = "Internal Error.";
+                        break;
+                    default:
+                        reason = "Undefined failure error code: "+reasonCode;
+                }
+                Log.d(TAG, "Disconnect failed. Reason :" + reason);
 
             }
 
@@ -347,8 +386,22 @@ public class WiFiDirectActivity extends Activity implements ChannelListener, Dev
 
                     @Override
                     public void onFailure(int reasonCode) {
+                        String reason;
+                        switch(reasonCode){
+                            case WifiP2pManager.P2P_UNSUPPORTED:
+                                reason = "WiFi P2P is not supported on this device.";
+                                break;
+                            case WifiP2pManager.BUSY:
+                                reason = "Framework is busy and unable to service this request.";
+                                break;
+                            case WifiP2pManager.ERROR:
+                                reason = "Internal Error.";
+                                break;
+                            default:
+                                reason = "Undefined failure error code: "+reasonCode;
+                        }
                         Toast.makeText(WiFiDirectActivity.this,
-                                "Connect abort request failed. Reason Code: " + reasonCode,
+                                "Connect abort request failed: " + reason,
                                 Toast.LENGTH_SHORT).show();
                     }
                 });

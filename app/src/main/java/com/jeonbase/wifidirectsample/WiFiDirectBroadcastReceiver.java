@@ -23,10 +23,14 @@ package com.jeonbase.wifidirectsample;
         import android.content.Intent;
         import android.net.NetworkInfo;
         import android.net.wifi.p2p.WifiP2pDevice;
+        import android.net.wifi.p2p.WifiP2pDeviceList;
         import android.net.wifi.p2p.WifiP2pManager;
         import android.net.wifi.p2p.WifiP2pManager.Channel;
         import android.net.wifi.p2p.WifiP2pManager.PeerListListener;
         import android.util.Log;
+
+        import java.util.ArrayList;
+        import java.util.List;
 
 /**
  * A BroadcastReceiver that notifies of important wifi p2p events.
@@ -36,6 +40,22 @@ public class WiFiDirectBroadcastReceiver extends BroadcastReceiver {
     private WifiP2pManager manager;
     private Channel channel;
     private WiFiDirectActivity activity;
+
+    private List<WifiP2pDevice> p_peers = new ArrayList<WifiP2pDevice>();
+
+    private WifiP2pManager.PeerListListener peerListListener = new WifiP2pManager.PeerListListener() {
+        @Override
+        public void onPeersAvailable(WifiP2pDeviceList peerList) {
+            // Out with the old, in with the new.
+            p_peers.clear();
+            p_peers.addAll(peerList.getDeviceList());
+
+            if (p_peers.size() == 0) {
+                Log.d(WiFiDirectActivity.TAG, "No devices found");
+                return;
+            }
+        }
+    };
 
 
     public WiFiDirectBroadcastReceiver(){
@@ -80,6 +100,9 @@ public class WiFiDirectBroadcastReceiver extends BroadcastReceiver {
             if (manager != null) {
                 manager.requestPeers(channel, (PeerListListener) activity.getFragmentManager()
                         .findFragmentById(R.id.frag_list));
+                manager.requestPeers(channel, peerListListener);
+                WakefulReceiver alarmWake = new WakefulReceiver();
+                alarmWake.setAlarm(context);
             }
             Log.d(WiFiDirectActivity.TAG, "P2P peers changed");
         } else if (WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION.equals(action)) {
@@ -109,7 +132,8 @@ public class WiFiDirectBroadcastReceiver extends BroadcastReceiver {
             fragment.updateThisDevice((WifiP2pDevice) intent.getParcelableExtra(
                     WifiP2pManager.EXTRA_WIFI_P2P_DEVICE));
 
-        } /*else if(intent.getAction().equals("android.intent.action.BOOT_COMPLETED")){
+        } /*else if(intent.getAction().equals("com.example.android.wifidirect.PASSIVE")){
+            WakefulReceiver alarmWake = new WakefulReceiver();
             alarmWake.setAlarm(context);
         }*/
     }

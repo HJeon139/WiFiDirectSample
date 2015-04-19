@@ -125,28 +125,6 @@ public class FileTransferService extends IntentService {
                 }
             }
 
-        }else if(intent.getAction().equals(ACTION_PASSIVE)){
-            Bundle extras = intent.getExtras();
-            //check for peers
-
-            //check if peer is in recent peer list.
-
-            //true
-                //is timestamp less than a day?
-                    //true
-                        //ignore peer
-                    //false
-                        //send peer primary file
-                        //receive peer primary file
-                        //update timestamp
-            //false
-                //send peer primary file
-
-                //receive peer primary file
-
-                //add peers to timestamp table
-
-            WakefulReceiver.completeWakefulIntent(intent);
         }
     }
 }

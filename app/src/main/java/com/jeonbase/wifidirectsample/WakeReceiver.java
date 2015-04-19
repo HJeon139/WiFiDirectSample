@@ -3,6 +3,7 @@ package com.jeonbase.wifidirectsample;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 
 /**
  * Created by Hohyun on 4/17/2015.
@@ -16,7 +17,9 @@ public class WakeReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
 
-            alarm.setAlarm(context);
+        Log.d(WiFiDirectActivity.TAG, "WakeReceive pass");
+        context.stopService(new Intent(context, PassiveScheduler.class));
+        alarm.setAlarm(context);
 
     }
 }

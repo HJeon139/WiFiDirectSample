@@ -7,13 +7,18 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.net.wifi.WpsInfo;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
+import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by Hohyun on 4/17/2015.
@@ -38,7 +43,21 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
     private WifiP2pManager.Channel channel;
     private BroadcastReceiver receiver = null;
 
+    private List<WifiP2pDevice> p_peers = new ArrayList<WifiP2pDevice>();
 
+    private WifiP2pManager.PeerListListener peerListListener = new WifiP2pManager.PeerListListener() {
+        @Override
+        public void onPeersAvailable(WifiP2pDeviceList peerList) {
+            // Out with the old, in with the new.
+            p_peers.clear();
+            p_peers.addAll(peerList.getDeviceList());
+
+            if (p_peers.size() == 0) {
+                Log.d(WiFiDirectActivity.TAG, "No devices found");
+                return;
+            }
+        }
+    };
 
     @Override
     protected void onHandleIntent(Intent intent) {
@@ -53,11 +72,18 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
         manager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
         channel = manager.initialize(this, getMainLooper(), null);
 
-
         resetData();
+        Log.d(WiFiDirectActivity.TAG, "peer count: "+Integer.toString(p_peers.size()));
+        if (p_peers.size()>0){
+            stopDiscovery();
 
-
+        }
+        //broadcastIntent.setAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
+        Intent broadcastIntent = new Intent(this, WakeReceiver.class);
+        sendBroadcast(broadcastIntent);
+        //stopDiscovery();
         Log.d(WiFiDirectActivity.TAG, "Passive: End...");
+
         WakefulReceiver.completeWakefulIntent(intent);
 
     }
@@ -102,8 +128,41 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
 
     }
 
+    public void stopDiscovery(){
+        manager.stopPeerDiscovery(channel,new WifiP2pManager.ActionListener() {
+
+            @Override
+            public void onFailure(int reasonCode) {
+                String reason;
+                switch(reasonCode){
+                    case WifiP2pManager.P2P_UNSUPPORTED:
+                        reason = "WiFi P2P is not supported on this device.";
+                        break;
+                    case WifiP2pManager.BUSY:
+                        reason = "Framework is busy and unable to service this request.";
+                        break;
+                    case WifiP2pManager.ERROR:
+                        reason = "Internal Error.";
+                        break;
+                    default:
+                        reason = "Undefined failure error code: "+reasonCode;
+                }
+                Log.d(TAG, "Discovery Stop Failed:" + reason);
+
+            }
+
+            @Override
+            public void onSuccess() {
+                Log.d(TAG, "Discovery Stopped");
+
+            }
+
+        });
+    }
+
     @Override
     public void connect(WifiP2pConfig config) {
+
         manager.connect(channel, config, new WifiP2pManager.ActionListener() {
 
             @Override
@@ -118,25 +177,59 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
         });
     }
 
+    public void connect(int peerNumber) {
+        WifiP2pDevice device = p_peers.get(peerNumber);
+
+        WifiP2pConfig config = new WifiP2pConfig();
+        config.deviceAddress = device.deviceAddress;
+        config.wps.setup = WpsInfo.PBC;
+
+        manager.connect(channel, config, new WifiP2pManager.ActionListener() {
+
+            @Override
+            public void onSuccess() {
+                // WiFiDirectBroadcastReceiver will notify us. Ignore for now.
+            }
+
+            @Override
+            public void onFailure(int reason) {
+                sendNotification("Micronet Status Update:", "Connection Failed... Retry?");
+                Log.d(WiFiDirectActivity.TAG, "Connection Failed");
+            }
+        });
+    }
+
     @Override
     public void disconnect() {
-        /*final DeviceDetailFragment fragment = (DeviceDetailFragment) getFragmentManager()
-                .findFragmentById(R.id.frag_detail);
-        fragment.resetViews();
+
         manager.removeGroup(channel, new WifiP2pManager.ActionListener() {
 
             @Override
             public void onFailure(int reasonCode) {
-                Log.d(TAG, "Disconnect failed. Reason :" + reasonCode);
+                String reason;
+                switch(reasonCode){
+                    case WifiP2pManager.P2P_UNSUPPORTED:
+                        reason = "WiFi P2P is not supported on this device.";
+                        break;
+                    case WifiP2pManager.BUSY:
+                        reason = "Framework is busy and unable to service this request.";
+                        break;
+                    case WifiP2pManager.ERROR:
+                        reason = "Internal Error.";
+                        break;
+                    default:
+                        reason = "Undefined failure error code: "+reasonCode;
+                }
+                Log.d(TAG, "Disconnect failed. Reason :" + reason);
 
             }
 
             @Override
             public void onSuccess() {
-                *//*fragment.getView().setVisibility(View.GONE);*//*
+                /*fragment.getView().setVisibility(View.GONE);*/
             }
 
-        });*/
+        });
     }
 
     public void resetData() {
@@ -151,12 +244,27 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
                 public void onSuccess() {
                     sendNotification("Micronet Status Update:", "Discovery Initiated");
                     Log.d(WiFiDirectActivity.TAG, "Discovery Initiated");
+
                 }
 
                 @Override
                 public void onFailure(int reasonCode) {
-                    sendNotification("Micronet Status Update:", "Discovery Failed: "+reasonCode);
-                    Log.d(WiFiDirectActivity.TAG, "Discovery Failed: "+reasonCode);
+                    String reason;
+                    switch(reasonCode){
+                        case WifiP2pManager.P2P_UNSUPPORTED:
+                            reason = "WiFi P2P is not supported on this device.";
+                            break;
+                        case WifiP2pManager.BUSY:
+                            reason = "Framework is busy and unable to service this request.";
+                            break;
+                        case WifiP2pManager.ERROR:
+                            reason = "Internal Error.";
+                            break;
+                        default:
+                            reason = "Undefined failure error code: "+reasonCode;
+                    }
+                    sendNotification("Micronet Status Update:", "Discovery Failed: "+reason);
+                    Log.d(WiFiDirectActivity.TAG, "Discovery Failed: "+reason);
                 }
             });
             Log.d(WiFiDirectActivity.TAG, "Passive: Discovery: End");
