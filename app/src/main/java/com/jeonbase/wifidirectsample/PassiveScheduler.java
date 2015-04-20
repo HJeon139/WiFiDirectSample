@@ -143,6 +143,8 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
                 config.groupOwnerIntent = 0;
                 config.wps.setup = WpsInfo.PBC;
 
+                sendNotification(NOTE_HEAD, "Attempting to connect to: "+ device.deviceName);
+                Log.d(TAG, "Attempting to connect to: "+ device.deviceName);
                 manager.connect(channel, config, new WifiP2pManager.ActionListener() {
 
                     @Override
@@ -154,7 +156,7 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
                         //bRIntent.setAction("PASSIVE_MODE_AUTO_SEND");
                         //sendBroadcast(bRIntent);
 
-                        sendNotification(NOTE_HEAD, "Connected to peer");
+                        //sendNotification(NOTE_HEAD, "Connected to peer: "+ p_peers.get(i).deviceName);
 
 
                         try {
@@ -190,7 +192,7 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
                                                     try{
                                                         try {
                                                             try{
-                                                                fileServerAsyncTask.get(5000, TimeUnit.MILLISECONDS);
+                                                                fileServerAsyncTask.get(15000, TimeUnit.MILLISECONDS);
                                                             }catch(TimeoutException te){
                                                                 Log.e(TAG, te.getMessage());
                                                             }
@@ -299,7 +301,7 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
                 } catch (InterruptedException e) {
                     Log.e(WiFiDirectActivity.TAG, e.getMessage());
                 }
-                sendNotification(NOTE_HEAD, "Sleeping...");
+
 
             }
         }else{
@@ -313,7 +315,7 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
 
         Intent broadcastIntent = new Intent(this, WakeReceiver.class);
         sendBroadcast(broadcastIntent);
-        cancelNotification();
+        sendNotification(NOTE_HEAD, "Sleeping...");
         WakefulReceiver.completeWakefulIntent(intent);
 
     }
