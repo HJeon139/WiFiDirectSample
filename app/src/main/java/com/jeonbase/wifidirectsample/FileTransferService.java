@@ -70,11 +70,11 @@ public class FileTransferService extends IntentService {
             int port = intent.getExtras().getInt(EXTRAS_GROUP_OWNER_PORT);
 
             try {
-                Log.d(WiFiDirectActivity.TAG, "Opening client socket - ");
+                Log.d(WiFiDirectActivity.TAG, "Opening client socket to: "+host);
                 socket.bind(null);
                 socket.connect((new InetSocketAddress(host, port)), SOCKET_TIMEOUT);
 
-                Log.d(WiFiDirectActivity.TAG, "Client socket - " + socket.isConnected());
+                Log.d(WiFiDirectActivity.TAG, "Client socket: " + Boolean.toString(socket.isConnected()));
                 OutputStream stream = socket.getOutputStream();
 
                 // CIPHER THE OUTPUT STREAM

@@ -200,7 +200,7 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
                                                     }
                                                 }else{
                                                     //send file
-                                                    Log.d(TAG,"info: \t" + info.toString().substring(1));
+                                                    Log.d(TAG,"info: \t" + info.toString());
 
                                                     // FileTransferService.
                                                     Log.d(WiFiDirectActivity.TAG, "Sending File: "+ Long.toString(SystemClock.elapsedRealtime()));
@@ -215,7 +215,7 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
                                                     serviceIntent.putExtra(FileTransferService.EXTRAS_FILE_PATH, DEFAULT_DIR);
                                                     serviceIntent.putExtra(FileTransferService.EXTRAS_GROUP_OWNER_PORT, 8988);
                                                     try {
-                                                        Log.d(TAG,"ownerAddress: \t" + ownerAddress.toString());
+                                                        Log.d(TAG,"ownerAddress: \t" + ownerAddress.toString().substring(1));
                                                         serviceIntent.putExtra(FileTransferService.EXTRAS_GROUP_OWNER_ADDRESS,
                                                                 ownerAddress.toString().substring(1));
                                                         startService(serviceIntent);
@@ -533,7 +533,7 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
                     Log.d(WiFiDirectActivity.TAG, "Discovery Initiated");
                     if (manager != null) {
                         manager.requestPeers(channel, peerListListener);
-                        Log.d(WiFiDirectActivity.TAG, "P2P peers changed");
+                        Log.d(WiFiDirectActivity.TAG, "P2P peers updated");
                     }
 
                 }
