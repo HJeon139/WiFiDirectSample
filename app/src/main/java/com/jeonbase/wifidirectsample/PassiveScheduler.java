@@ -194,13 +194,13 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
                                                             try{
                                                                 fileServerAsyncTask.get(15000, TimeUnit.MILLISECONDS);
                                                             }catch(TimeoutException te){
-                                                                Log.e(TAG, te.getMessage());
+                                                                Log.e(TAG, " "+te.getMessage());
                                                             }
                                                         }catch(ExecutionException ee){
-                                                            Log.e(TAG, ee.getMessage());
+                                                            Log.e(TAG, " "+ee.getMessage());
                                                         }
                                                     }catch (InterruptedException ie ){
-                                                        Log.e(TAG, ie.getMessage());
+                                                        Log.e(TAG, " "+ie.getMessage());
                                                     }
                                                 }else{
                                                     //send file
