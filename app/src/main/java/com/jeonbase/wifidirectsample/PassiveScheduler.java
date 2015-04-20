@@ -84,6 +84,8 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
     };
 
     private WifiP2pManager.PeerListListener peerListListener = new WifiP2pManager.PeerListListener() {
+
+
         @Override
         public void onPeersAvailable(WifiP2pDeviceList peerList) {
             // Out with the old, in with the new.
@@ -113,23 +115,22 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
         resetData();
 
         //broadcastIntent.setAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
-        Intent broadcastIntent = new Intent(this, WakeReceiver.class);
-        sendBroadcast(broadcastIntent);
+
         //stopDiscovery();
 
         NetworkInfo networkInfo = (NetworkInfo) intent
                 .getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
-
-
 
         Log.d(WiFiDirectActivity.TAG, "peer count: " + Integer.toString(p_peers.size()));
         if (p_peers.size()>0){
             stopDiscovery();
             for(int i=0; i<p_peers.size(); i++){
                 connect(i);
-                networkInfo = (NetworkInfo) intent
-                        .getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
-                if(networkInfo != null){
+                Intent bRIntent = new Intent(this, BroadcastReceiver.class);
+                bRIntent.setAction("PASSIVE_MODE_AUTO_SEND");
+                sendBroadcast(bRIntent);
+                networkInfo = (NetworkInfo) intent.getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
+                try{
                     if (networkInfo.isConnected()) {
 
                         // we are connected with the other device, request connection
@@ -140,30 +141,21 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
                         // It's a disconnect
                         resetData();
                     }
+                }catch (NullPointerException e){
+                    Log.e(TAG, e.getMessage());
                 }
 
             }
         }else{
-            try{
-                if(networkInfo.isConnected()){
-                    disconnect();
-                }
-            }catch(NullPointerException e){
-                Log.e(TAG, e.getMessage());
-                try{
-                    if(info.groupFormed){
-                        disconnect();
-                    }
-                }catch(NullPointerException e1) {
-                    Log.e(TAG, e1.getMessage());
-                }
-            }
+            //disconnect();
 
 
         }
 
         Log.d(WiFiDirectActivity.TAG, "Passive: End...");
 
+        Intent broadcastIntent = new Intent(this, WakeReceiver.class);
+        sendBroadcast(broadcastIntent);
         WakefulReceiver.completeWakefulIntent(intent);
 
     }
@@ -287,26 +279,34 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
     @Override
     public void onConnectionInfoAvailable(final WifiP2pInfo info) {
         this.info = info;
-
+        Log.d(WiFiDirectActivity.TAG, "onConnection info transfer");
 
         // InetAddress from WifiP2pInfo struct.
-        Log.d(TAG, "Group Owner IP - " + info.groupOwnerAddress.getHostAddress());
+        try{
+            Log.d(TAG, "Group Owner IP - " + this.info.groupOwnerAddress.getHostAddress());
 
-        // After the group negotiation, we assign the group owner as the file
-        // server. The file server is single threaded, single connection server
-        // socket.
-        if (info.groupFormed && info.isGroupOwner) {
-            //Listen
-            new FileServerAsyncTask(this).execute();
-            Log.d(WiFiDirectActivity.TAG, "Listening for File");
-        } else if (info.groupFormed) {
-            // The device acts as the client. Send File
-            //send data
-            sendfile();
 
-            //disconnect
-            disconnect();
+            // After the group negotiation, we assign the group owner as the file
+            // server. The file server is single threaded, single connection server
+            // socket.
+            if (this.info.groupFormed && this.info.isGroupOwner) {
+                //Listen
+                sendNotification("Micronet Status Updated:", "Acting as server... Listening...");
+                new FileServerAsyncTask(PassiveScheduler.this).execute();
+                Log.d(WiFiDirectActivity.TAG, "Listening for File");
+            } else if (this.info.groupFormed) {
+                // The device acts as the client. Send File
+                //send data
+                sendNotification("Micronet Status Updated:", "Sending to: " + this.info.groupOwnerAddress.getHostAddress());
+                sendfile();
+
+                //disconnect
+                disconnect();
+            }
+        }catch(NullPointerException e){
+            Log.e(TAG, e.getMessage());
         }
+
     }
 
     public void transfer(){

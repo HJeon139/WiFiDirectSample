@@ -131,9 +131,51 @@ public class WiFiDirectBroadcastReceiver extends BroadcastReceiver {
             fragment.updateThisDevice((WifiP2pDevice) intent.getParcelableExtra(
                     WifiP2pManager.EXTRA_WIFI_P2P_DEVICE));
 
-        } /*else if(intent.getAction().equals("com.example.android.wifidirect.PASSIVE")){
-            WakefulReceiver alarmWake = new WakefulReceiver();
-            alarmWake.setAlarm(context);
-        }*/
+        } else if(intent.getAction().equals("PASSIVE_MODE_AUTO_SEND")){
+            NetworkInfo networkInfo = (NetworkInfo) intent
+                    .getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
+            Log.d(WiFiDirectActivity.TAG, "Passive mode connection routing");
+            if (networkInfo.isConnected()) {
+
+                // we are connected with the other device, request connection
+                // info to find group owner IP
+
+                PassiveScheduler fragment = new PassiveScheduler();
+
+                manager.requestConnectionInfo(channel, fragment);
+            } else {
+                // It's a disconnect
+                activity.resetData();
+                manager.removeGroup(channel, new WifiP2pManager.ActionListener() {
+
+                    @Override
+                    public void onFailure(int reasonCode) {
+                        String reason;
+                        switch(reasonCode){
+                            case WifiP2pManager.P2P_UNSUPPORTED:
+                                reason = "WiFi P2P is not supported on this device.";
+                                break;
+                            case WifiP2pManager.BUSY:
+                                reason = "Framework is busy and unable to service this request.";
+                                break;
+                            case WifiP2pManager.ERROR:
+                                reason = "Internal Error.";
+                                break;
+                            default:
+                                reason = "Undefined failure error code: "+reasonCode;
+                        }
+                        Log.d(WiFiDirectActivity.TAG, "Disconnect failed. Reason :" + reason);
+
+                    }
+
+                    @Override
+                    public void onSuccess() {
+                /*fragment.getView().setVisibility(View.GONE);*/
+                        Log.d(WiFiDirectActivity.TAG, "Disconnected");
+                    }
+
+                });
+            }
+        }
     }
 }
