@@ -132,6 +132,9 @@ public class WiFiDirectBroadcastReceiver extends BroadcastReceiver {
                     WifiP2pManager.EXTRA_WIFI_P2P_DEVICE));
 
         } else if(intent.getAction().equals("PASSIVE_MODE_AUTO_SEND")){
+            if (manager == null) {
+                return;
+            }
             NetworkInfo networkInfo = (NetworkInfo) intent
                     .getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
             Log.d(WiFiDirectActivity.TAG, "Passive mode connection routing");

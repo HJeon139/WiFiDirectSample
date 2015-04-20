@@ -118,18 +118,18 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
 
         //stopDiscovery();
 
-        NetworkInfo networkInfo = (NetworkInfo) intent
-                .getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
+        /*NetworkInfo networkInfo = (NetworkInfo) intent
+                .getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);*/
 
         Log.d(WiFiDirectActivity.TAG, "peer count: " + Integer.toString(p_peers.size()));
         if (p_peers.size()>0){
             stopDiscovery();
             for(int i=0; i<p_peers.size(); i++){
                 connect(i);
-                Intent bRIntent = new Intent(this, BroadcastReceiver.class);
+                Intent bRIntent = new Intent(this, WiFiDirectBroadcastReceiver.class);
                 bRIntent.setAction("PASSIVE_MODE_AUTO_SEND");
                 sendBroadcast(bRIntent);
-                networkInfo = (NetworkInfo) intent.getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
+                NetworkInfo networkInfo = (NetworkInfo) intent.getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
                 try{
                     if (networkInfo.isConnected()) {
 
@@ -241,6 +241,7 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
             public void onSuccess() {
                 // WiFiDirectBroadcastReceiver will notify us. Ignore for now.
                 manager.requestConnectionInfo(channel, connectionListener);
+
                 transfer();
             }
 
