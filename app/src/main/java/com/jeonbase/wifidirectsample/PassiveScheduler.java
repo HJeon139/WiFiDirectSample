@@ -196,13 +196,14 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
                                             try {
                                                 Log.d(TAG,"ownerAddress: \t" + ownerAddress.toString());
                                                 serviceIntent.putExtra(FileTransferService.EXTRAS_GROUP_OWNER_ADDRESS,
-                                                        ownerAddress);
+                                                        ownerAddress.toString());
                                                 startService(serviceIntent);
                                             }catch(NullPointerException e){
                                                 Log.e(WiFiDirectActivity.TAG, e.getMessage());
                                                 sendNotification(NOTE_HEAD, "Error: Null Peer Address");
                                                 disconnect();
                                             }
+                                            sendNotification(NOTE_HEAD, "File Transfer Success");
 
 
                                             try {
