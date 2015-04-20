@@ -7,6 +7,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.net.wifi.WpsInfo;
@@ -15,12 +16,14 @@ import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
+import android.os.SystemClock;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,6 +38,8 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
 
     public static final String TAG = "Micronet Demo";
     public static final int NOTIFICATION_ID = 1;
+    public static final String NOTE_HEAD = "Micronet Passive Mode";
+    public static final String DEFAULT_DIR = "content://com.android.providers.media.documents/document/image%3A15716";
 
     private NotificationManager mNotificationManager;
     NotificationCompat.Builder builder;
@@ -51,7 +56,7 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
 
     private List<WifiP2pDevice> p_peers = new ArrayList<WifiP2pDevice>();
 
-    private WifiP2pManager.ConnectionInfoListener connectionListener = new WifiP2pManager.ConnectionInfoListener(){
+    /*private WifiP2pManager.ConnectionInfoListener connectionListener = new WifiP2pManager.ConnectionInfoListener(){
         @Override
         public void onConnectionInfoAvailable(final WifiP2pInfo info) {
             PassiveScheduler.this.info = info;
@@ -81,7 +86,7 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
             }
 
         }
-    };
+    };*/
 
     private WifiP2pManager.PeerListListener peerListListener = new WifiP2pManager.PeerListListener() {
 
@@ -102,7 +107,7 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
     @Override
     protected void onHandleIntent(Intent intent) {
         Log.d(WiFiDirectActivity.TAG, "Passive: Starting...");
-        sendNotification("Micronet Status Updated:", "Passive mode active");
+        sendNotification(NOTE_HEAD, "Passive mode active");
         //passive stuff
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
@@ -114,44 +119,136 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
 
         resetData();
 
-        //broadcastIntent.setAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
-
-        //stopDiscovery();
-
-        /*NetworkInfo networkInfo = (NetworkInfo) intent
-                .getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);*/
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            Log.e(WiFiDirectActivity.TAG, e.getMessage());
+        }
 
         Log.d(WiFiDirectActivity.TAG, "peer count: " + Integer.toString(p_peers.size()));
         if (p_peers.size()>0){
-            stopDiscovery();
+            cancelNotification();
             for(int i=0; i<p_peers.size(); i++){
-                connect(i);
-                Intent bRIntent = new Intent(this, WiFiDirectBroadcastReceiver.class);
-                bRIntent.setAction("PASSIVE_MODE_AUTO_SEND");
-                sendBroadcast(bRIntent);
+                //connect(i);
+                Log.d(WiFiDirectActivity.TAG, "Loop("+Integer.toString(i)+"): \t"+Long.toString(SystemClock.elapsedRealtime()));
 
-                NetworkInfo networkInfo = (NetworkInfo) intent.getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
-                try{
-                    if (networkInfo.isConnected()) {
+                WifiP2pDevice device = p_peers.get(i);
 
-                        // we are connected with the other device, request connection
-                        // info to find group owner IP
+                WifiP2pConfig config = new WifiP2pConfig();
+                config.deviceAddress = device.deviceAddress;
+                config.groupOwnerIntent = 0;
+                config.wps.setup = WpsInfo.PBC;
 
-                        manager.requestConnectionInfo(channel, connectionListener);
-                    } else {
-                        // It's a disconnect
-                        resetData();
+                manager.connect(channel, config, new WifiP2pManager.ActionListener() {
+
+                    @Override
+                    public void onSuccess() {
+                        Log.d(WiFiDirectActivity.TAG, "Connected" );
+
+                        //stopDiscovery();
+                        //Intent bRIntent = new Intent(PassiveScheduler.this, WiFiDirectBroadcastReceiver.class);
+                        //bRIntent.setAction("PASSIVE_MODE_AUTO_SEND");
+                        //sendBroadcast(bRIntent);
+
+                        sendNotification(NOTE_HEAD, "Connected to peer");
+
+
+                        try {
+                            Thread.sleep(3000);
+                        } catch (InterruptedException e) {
+                            Log.e(WiFiDirectActivity.TAG, e.getMessage());
+                        }
+                        //manager.createGroup(channel, new WifiP2pManager.ActionListener(){
+
+                            //@Override
+                            //public void onSuccess() {
+                                Log.d(WiFiDirectActivity.TAG, "****:\t"+ Long.toString(SystemClock.elapsedRealtime()));
+                                try {
+                                    Thread.sleep(2000);
+                                } catch (InterruptedException e) {
+                                    Log.e(WiFiDirectActivity.TAG, e.getMessage());
+                                }
+                                manager.requestConnectionInfo(channel, new WifiP2pManager.ConnectionInfoListener(){
+                                    @Override
+                                    public void onConnectionInfoAvailable(WifiP2pInfo info) {
+                                        InetAddress ownerAddress=info.groupOwnerAddress;
+
+                                        ConnectivityManager connManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+
+                                        NetworkInfo networkInfo = connManager.getActiveNetworkInfo();
+
+                                        if (networkInfo.isConnected()) {
+                                            Log.d(TAG,"info: \t" + info.toString());
+
+
+                                            // FileTransferService.
+                                            Log.d(WiFiDirectActivity.TAG, "Sending File: "+ Long.toString(SystemClock.elapsedRealtime()));
+                                            //Uri uri = data.getData();
+                                            //TextView statusText = (TextView) mContentView.findViewById(R.id.status_text);
+                                            //statusText.setText("Sending: " + uri);
+
+
+                                            Log.d(WiFiDirectActivity.TAG, "File Directory: " + DEFAULT_DIR);
+                                            Intent serviceIntent = new Intent(PassiveScheduler.this, FileTransferService.class);
+                                            serviceIntent.setAction(FileTransferService.ACTION_SEND_FILE);
+                                            serviceIntent.putExtra(FileTransferService.EXTRAS_FILE_PATH, DEFAULT_DIR);
+                                            serviceIntent.putExtra(FileTransferService.EXTRAS_GROUP_OWNER_PORT, 8988);
+                                            try {
+                                                Log.d(TAG,"ownerAddress: \t" + ownerAddress.toString());
+                                                serviceIntent.putExtra(FileTransferService.EXTRAS_GROUP_OWNER_ADDRESS,
+                                                        ownerAddress);
+                                                startService(serviceIntent);
+                                            }catch(NullPointerException e){
+                                                Log.e(WiFiDirectActivity.TAG, e.getMessage());
+                                                sendNotification(NOTE_HEAD, "Error: Null Peer Address");
+                                                disconnect();
+                                            }
+
+
+                                            try {
+                                                Thread.sleep(5000);
+                                            } catch (InterruptedException e) {
+                                                Log.e(WiFiDirectActivity.TAG, e.getMessage());
+                                            }
+
+                                            disconnect();
+                                        } else {
+                                            Log.d(WiFiDirectActivity.TAG, "Info Pass Failed:\t"+ Long.toString(SystemClock.elapsedRealtime()));
+                                            disconnect();
+                                        }
+                                    }
+                                });
+                            //}
+
+                            /*@Override
+                            public void onFailure(int reason) {
+                                Log.d(WiFiDirectActivity.TAG, "Grouping Failed");
+                                disconnect();
+                            }
+                        });*/
+
                     }
-                }catch (NullPointerException e){
-                    Log.e(TAG, e.getMessage());
+
+                    @Override
+                    public void onFailure(int reason) {
+                        sendNotification("Micronet Status Update:", "Connection Failed... Retry?");
+                        Log.d(WiFiDirectActivity.TAG, "Connection Failed");
+                    }
+                });
+
+                try {
+                    Thread.sleep(10000);
+                } catch (InterruptedException e) {
+                    Log.e(WiFiDirectActivity.TAG, e.getMessage());
                 }
+                cancelNotification();
 
             }
         }else{
+            //
             //disconnect();
-
-
         }
+        //stopDiscovery();
 
         Log.d(WiFiDirectActivity.TAG, "Passive: End...");
 
@@ -178,6 +275,12 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
 
         mBuilder.setContentIntent(contentIntent);
         mNotificationManager.notify(NOTIFICATION_ID, mBuilder.build());
+    }
+
+    private void cancelNotification(){
+        mNotificationManager = (NotificationManager)
+                this.getSystemService(Context.NOTIFICATION_SERVICE);
+        mNotificationManager.cancel(NOTIFICATION_ID);
     }
 
     /*public void resetData() {
@@ -241,9 +344,9 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
             @Override
             public void onSuccess() {
                 // WiFiDirectBroadcastReceiver will notify us. Ignore for now.
-                manager.requestConnectionInfo(channel, connectionListener);
+                //manager.requestConnectionInfo(channel, connectionListener);
 
-                transfer();
+                //transfer();
             }
 
             @Override
@@ -265,14 +368,15 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
             @Override
             public void onSuccess() {
                 Log.d(WiFiDirectActivity.TAG, "Connected" );
+                Intent bRIntent = new Intent(PassiveScheduler.this, WiFiDirectBroadcastReceiver.class);
+                bRIntent.setAction("PASSIVE_MODE_AUTO_SEND");
+                sendBroadcast(bRIntent);
 
-                manager.requestConnectionInfo(channel, connectionListener);
-                transfer();
             }
 
             @Override
             public void onFailure(int reason) {
-                sendNotification("Micronet Status Update:", "Connection Failed... Retry?");
+                sendNotification(NOTE_HEAD, "Connection Failed... Retry?");
                 Log.d(WiFiDirectActivity.TAG, "Connection Failed");
             }
         });
@@ -284,6 +388,8 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
         Log.d(WiFiDirectActivity.TAG, "onConnection info transfer");
 
         // InetAddress from WifiP2pInfo struct.
+
+
         try{
             Log.d(TAG, "Group Owner IP - " + this.info.groupOwnerAddress.getHostAddress());
 
@@ -293,13 +399,13 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
             // socket.
             if (this.info.groupFormed && this.info.isGroupOwner) {
                 //Listen
-                sendNotification("Micronet Status Updated:", "Acting as server... Listening...");
+                sendNotification(NOTE_HEAD, "Acting as server... Listening...");
                 new FileServerAsyncTask(PassiveScheduler.this).execute();
                 Log.d(WiFiDirectActivity.TAG, "Listening for File");
             } else if (this.info.groupFormed) {
                 // The device acts as the client. Send File
                 //send data
-                sendNotification("Micronet Status Updated:", "Sending to: " + this.info.groupOwnerAddress.getHostAddress());
+                sendNotification(NOTE_HEAD, "Sending to: " + this.info.groupOwnerAddress.getHostAddress());
                 sendfile();
 
                 //disconnect
@@ -342,8 +448,9 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
         Intent serviceIntent = new Intent(this, FileTransferService.class);
         serviceIntent.setAction(FileTransferService.ACTION_SEND_FILE);
         serviceIntent.putExtra(FileTransferService.EXTRAS_FILE_PATH, "content://com.android.providers.media.documents/document/image%3A15716");
+
         serviceIntent.putExtra(FileTransferService.EXTRAS_GROUP_OWNER_ADDRESS,
-                info.groupOwnerAddress.getHostAddress());
+                this.info.groupOwnerAddress.getHostAddress());
         serviceIntent.putExtra(FileTransferService.EXTRAS_GROUP_OWNER_PORT, 8988);
         this.startService(serviceIntent);
     }
@@ -384,7 +491,7 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
 
     public void resetData() {
         if (!isWifiP2pEnabled) {
-            sendNotification("Micronet Status Update:", "WiFi Direct is Disabled");
+            sendNotification(NOTE_HEAD, "WiFi Direct is Disabled");
 
         }else {
 
@@ -392,7 +499,7 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
 
                 @Override
                 public void onSuccess() {
-                    sendNotification("Micronet Status Update:", "Scanning for peers");
+                    sendNotification(NOTE_HEAD, "Scanning for peers");
                     Log.d(WiFiDirectActivity.TAG, "Discovery Initiated");
                     if (manager != null) {
                         manager.requestPeers(channel, peerListListener);
@@ -417,7 +524,7 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
                         default:
                             reason = "Undefined failure error code: "+reasonCode;
                     }
-                    sendNotification("Micronet Status Update:", "Scanning Failed: "+reason);
+                    sendNotification(NOTE_HEAD, "Scanning Failed: "+reason);
                     Log.d(WiFiDirectActivity.TAG, "Discovery Failed: "+reason);
                 }
             });
@@ -429,7 +536,7 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
     public void onChannelDisconnected() {
         // we will try once more
         if (manager != null && !retryChannel) {
-            sendNotification("Micronet Status Update:", "Channel lost. Trying again");
+            sendNotification(NOTE_HEAD, "Channel lost. Trying again");
             //Toast.makeText(this, "Channel lost. Trying again", Toast.LENGTH_LONG).show();
 
             resetData();
@@ -439,7 +546,7 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
             /*Toast.makeText(this,
                     "Severe! Channel is probably lost premanently. Try Disable/Re-Enable P2P.",
                     Toast.LENGTH_LONG).show();*/
-            sendNotification("Micronet Status Update:", "Severe! Channel is probably lost premanently. Try Disable/Re-Enable P2P.");
+            sendNotification(NOTE_HEAD, "Severe! Channel is probably lost premanently. Try Disable/Re-Enable P2P.");
         }
     }
 

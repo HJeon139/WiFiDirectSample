@@ -57,7 +57,7 @@ public class WakefulReceiver extends WakefulBroadcastReceiver{
         calendar.setTimeInMillis(System.currentTimeMillis());
 
         //interval = 5s
-        Log.d(WiFiDirectActivity.TAG, "Time: "+Long.toString(SystemClock.elapsedRealtime()));
+        Log.d(WiFiDirectActivity.TAG, "Time: \t\t"+Long.toString(SystemClock.elapsedRealtime()));
         alarmMgr.set(AlarmManager.RTC_WAKEUP,
                 calendar.getTimeInMillis()+6000, alarmIntent);
 

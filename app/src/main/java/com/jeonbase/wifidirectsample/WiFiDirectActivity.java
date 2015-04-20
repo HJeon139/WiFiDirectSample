@@ -126,9 +126,9 @@ public class WiFiDirectActivity extends Activity implements ChannelListener, Dev
         ComponentName breceiver = new ComponentName(this, WiFiDirectBroadcastReceiver.class);
         PackageManager pm = getPackageManager();
 
-       /* pm.setComponentEnabledSetting(breceiver,
+        pm.setComponentEnabledSetting(breceiver,
                 PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-                PackageManager.DONT_KILL_APP);*/
+                PackageManager.DONT_KILL_APP);
         pm.setComponentEnabledSetting(wakefulreceiver,
                 PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
                 PackageManager.DONT_KILL_APP);
