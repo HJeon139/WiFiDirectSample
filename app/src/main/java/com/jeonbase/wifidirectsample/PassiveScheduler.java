@@ -110,6 +110,7 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
     @Override
     protected void onHandleIntent(Intent intent) {
         Log.d(WiFiDirectActivity.TAG, "Passive: Starting...");
+
         sendNotification(NOTE_HEAD, "Passive mode active");
         //passive stuff
         intentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
@@ -180,6 +181,7 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
                                         NetworkInfo networkInfo = connManager.getActiveNetworkInfo();
 
                                         if (networkInfo.isConnected()) {
+
                                             if(info.groupFormed){
                                                 if(info.isGroupOwner){
                                                     //listen
@@ -188,7 +190,7 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
                                                     try{
                                                         try {
                                                             try{
-                                                                fileServerAsyncTask.get(1000, TimeUnit.MILLISECONDS);
+                                                                fileServerAsyncTask.get(5000, TimeUnit.MILLISECONDS);
                                                             }catch(TimeoutException te){
                                                                 Log.e(TAG, te.getMessage());
                                                             }
@@ -236,6 +238,7 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
                                                     disconnect();
                                                 }
                                             }else{
+                                                Log.d(WiFiDirectActivity.TAG, "No longer connected:\t"+ Long.toString(SystemClock.elapsedRealtime()));
                                                 disconnect();
                                             }
 
@@ -254,6 +257,33 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
                                 disconnect();
                             }
                         });*/
+                        manager.cancelConnect(channel, new WifiP2pManager.ActionListener() {
+                            @Override
+                            public void onFailure(int reasonCode) {
+                                String reason;
+                                switch(reasonCode){
+                                    case WifiP2pManager.P2P_UNSUPPORTED:
+                                        reason = "WiFi P2P is not supported on this device.";
+                                        break;
+                                    case WifiP2pManager.BUSY:
+                                        reason = "Framework is busy and unable to service this request.";
+                                        break;
+                                    case WifiP2pManager.ERROR:
+                                        reason = "Internal Error.";
+                                        break;
+                                    default:
+                                        reason = "Undefined failure error code: "+reasonCode;
+                                }
+                                Log.d(TAG, "Connect Stop Failed:" + reason);
+
+                            }
+
+                            @Override
+                            public void onSuccess() {
+                                Log.d(TAG, "Connection Stopped");
+
+                            }
+                        });
 
                     }
 
@@ -269,7 +299,7 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
                 } catch (InterruptedException e) {
                     Log.e(WiFiDirectActivity.TAG, e.getMessage());
                 }
-                cancelNotification();
+                sendNotification(NOTE_HEAD, "Sleeping...");
 
             }
         }else{
@@ -547,6 +577,7 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
                             break;
                         case WifiP2pManager.BUSY:
                             reason = "Framework is busy and unable to service this request.";
+                            disconnect();
                             break;
                         case WifiP2pManager.ERROR:
                             reason = "Internal Error.";
@@ -556,6 +587,7 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
                     }
                     sendNotification(NOTE_HEAD, "Scanning Failed: "+reason);
                     Log.d(WiFiDirectActivity.TAG, "Discovery Failed: "+reason);
+
                 }
             });
             Log.d(WiFiDirectActivity.TAG, "Passive: Discovery: End");
