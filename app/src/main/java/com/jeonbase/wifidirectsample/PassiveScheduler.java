@@ -26,6 +26,9 @@ import android.widget.Toast;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Created by Hohyun on 4/17/2015.
@@ -174,45 +177,69 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
                                         InetAddress ownerAddress=info.groupOwnerAddress;
 
                                         ConnectivityManager connManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-
                                         NetworkInfo networkInfo = connManager.getActiveNetworkInfo();
 
                                         if (networkInfo.isConnected()) {
-                                            Log.d(TAG,"info: \t" + info.toString());
+                                            if(info.groupFormed){
+                                                if(info.isGroupOwner){
+                                                    //listen
+                                                    FileServerAsyncTask fileServerAsyncTask = new FileServerAsyncTask(getApplicationContext());
+                                                    fileServerAsyncTask.execute();
+                                                    try{
+                                                        try {
+                                                            try{
+                                                                fileServerAsyncTask.get(1000, TimeUnit.MILLISECONDS);
+                                                            }catch(TimeoutException te){
+                                                                Log.e(TAG, te.getMessage());
+                                                            }
+                                                        }catch(ExecutionException ee){
+                                                            Log.e(TAG, ee.getMessage());
+                                                        }
+                                                    }catch (InterruptedException ie ){
+                                                        Log.e(TAG, ie.getMessage());
+                                                    }
+                                                }else{
+                                                    //send file
+                                                    Log.d(TAG,"info: \t" + info.toString().substring(1));
+
+                                                    // FileTransferService.
+                                                    Log.d(WiFiDirectActivity.TAG, "Sending File: "+ Long.toString(SystemClock.elapsedRealtime()));
+                                                    //Uri uri = data.getData();
+                                                    //TextView statusText = (TextView) mContentView.findViewById(R.id.status_text);
+                                                    //statusText.setText("Sending: " + uri);
 
 
-                                            // FileTransferService.
-                                            Log.d(WiFiDirectActivity.TAG, "Sending File: "+ Long.toString(SystemClock.elapsedRealtime()));
-                                            //Uri uri = data.getData();
-                                            //TextView statusText = (TextView) mContentView.findViewById(R.id.status_text);
-                                            //statusText.setText("Sending: " + uri);
+                                                    Log.d(WiFiDirectActivity.TAG, "File Directory: " + DEFAULT_DIR);
+                                                    Intent serviceIntent = new Intent(PassiveScheduler.this, FileTransferService.class);
+                                                    serviceIntent.setAction(FileTransferService.ACTION_SEND_FILE);
+                                                    serviceIntent.putExtra(FileTransferService.EXTRAS_FILE_PATH, DEFAULT_DIR);
+                                                    serviceIntent.putExtra(FileTransferService.EXTRAS_GROUP_OWNER_PORT, 8988);
+                                                    try {
+                                                        Log.d(TAG,"ownerAddress: \t" + ownerAddress.toString());
+                                                        serviceIntent.putExtra(FileTransferService.EXTRAS_GROUP_OWNER_ADDRESS,
+                                                                ownerAddress.toString().substring(1));
+                                                        startService(serviceIntent);
+                                                    }catch(NullPointerException e){
+                                                        Log.e(WiFiDirectActivity.TAG, e.getMessage());
+                                                        sendNotification(NOTE_HEAD, "Error: Null Peer Address");
+                                                        disconnect();
+                                                    }
+                                                    sendNotification(NOTE_HEAD, "File Transfer Started");
 
 
-                                            Log.d(WiFiDirectActivity.TAG, "File Directory: " + DEFAULT_DIR);
-                                            Intent serviceIntent = new Intent(PassiveScheduler.this, FileTransferService.class);
-                                            serviceIntent.setAction(FileTransferService.ACTION_SEND_FILE);
-                                            serviceIntent.putExtra(FileTransferService.EXTRAS_FILE_PATH, DEFAULT_DIR);
-                                            serviceIntent.putExtra(FileTransferService.EXTRAS_GROUP_OWNER_PORT, 8988);
-                                            try {
-                                                Log.d(TAG,"ownerAddress: \t" + ownerAddress.toString());
-                                                serviceIntent.putExtra(FileTransferService.EXTRAS_GROUP_OWNER_ADDRESS,
-                                                        ownerAddress.toString().substring(1));
-                                                startService(serviceIntent);
-                                            }catch(NullPointerException e){
-                                                Log.e(WiFiDirectActivity.TAG, e.getMessage());
-                                                sendNotification(NOTE_HEAD, "Error: Null Peer Address");
+                                                    try {
+                                                        Thread.sleep(5000);
+                                                    } catch (InterruptedException e) {
+                                                        Log.e(WiFiDirectActivity.TAG, e.getMessage());
+                                                    }
+
+                                                    disconnect();
+                                                }
+                                            }else{
                                                 disconnect();
                                             }
-                                            sendNotification(NOTE_HEAD, "File Transfer Success");
 
 
-                                            try {
-                                                Thread.sleep(5000);
-                                            } catch (InterruptedException e) {
-                                                Log.e(WiFiDirectActivity.TAG, e.getMessage());
-                                            }
-
-                                            disconnect();
                                         } else {
                                             Log.d(WiFiDirectActivity.TAG, "Info Pass Failed:\t"+ Long.toString(SystemClock.elapsedRealtime()));
                                             disconnect();
@@ -256,6 +283,7 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
 
         Intent broadcastIntent = new Intent(this, WakeReceiver.class);
         sendBroadcast(broadcastIntent);
+        cancelNotification();
         WakefulReceiver.completeWakefulIntent(intent);
 
     }

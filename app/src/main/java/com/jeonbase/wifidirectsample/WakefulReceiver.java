@@ -41,11 +41,11 @@ public class WakefulReceiver extends WakefulBroadcastReceiver{
 
         manager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
         channel = manager.initialize(this, getMainLooper(), null);*/
-        Log.d(WiFiDirectActivity.TAG, "Passive Start: WakefulReceiver pass");
+        //Log.d(WiFiDirectActivity.TAG, "Passive Start: WakefulReceiver pass");
         Intent service = new Intent(context, PassiveScheduler.class);
         //service.setAction(FileTransferService.ACTION_PASSIVE);
         startWakefulService(context,service);
-        Log.d(WiFiDirectActivity.TAG, "Wakefulservice done");
+        //Log.d(WiFiDirectActivity.TAG, "Wakefulservice done");
     }
 
     public void setAlarm(Context context){
