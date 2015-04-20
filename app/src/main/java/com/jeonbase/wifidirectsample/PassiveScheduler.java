@@ -129,6 +129,7 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
                 Intent bRIntent = new Intent(this, WiFiDirectBroadcastReceiver.class);
                 bRIntent.setAction("PASSIVE_MODE_AUTO_SEND");
                 sendBroadcast(bRIntent);
+
                 NetworkInfo networkInfo = (NetworkInfo) intent.getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
                 try{
                     if (networkInfo.isConnected()) {
