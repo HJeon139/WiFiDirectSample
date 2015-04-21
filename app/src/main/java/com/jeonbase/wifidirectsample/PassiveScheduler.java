@@ -16,6 +16,7 @@ import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
+import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceInfo;
 import android.os.SystemClock;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
@@ -25,7 +26,9 @@ import android.widget.Toast;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -43,6 +46,7 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
     public static final int NOTIFICATION_ID = 1;
     public static final String NOTE_HEAD = "Micronet Passive Mode";
     public static final String DEFAULT_DIR = "content://com.android.providers.media.documents/document/image%3A15716";
+    public static final int SERVER_PORT = 8988;
 
     private NotificationManager mNotificationManager;
     NotificationCompat.Builder builder;
@@ -110,6 +114,8 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
     @Override
     protected void onHandleIntent(Intent intent) {
         Log.d(WiFiDirectActivity.TAG, "Passive: Starting...");
+
+        register();
 
         sendNotification(NOTE_HEAD, "Passive mode active");
         //passive stuff
@@ -318,6 +324,53 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
         sendNotification(NOTE_HEAD, "Sleeping...");
         WakefulReceiver.completeWakefulIntent(intent);
 
+    }
+
+    private void register(){
+        Map record = new HashMap();
+
+        record.put("listenport", Integer.toString(SERVER_PORT));
+        record.put("peer_name", "main_server");
+        record.put("available", "visible");
+
+
+        // Service information.  Pass it an instance name, service type
+        // _protocol._transportlayer , and the map containing
+        // information other devices will want once they connect to this one.
+        WifiP2pDnsSdServiceInfo serviceInfo =
+                WifiP2pDnsSdServiceInfo.newInstance("_test", "_presence._tcp", record);
+
+        // Add the local service, sending the service info, network channel,
+        // and listener that will be used to indicate success or failure of
+        // the request.
+        manager.addLocalService(channel, serviceInfo, new WifiP2pManager.ActionListener() {
+            @Override
+            public void onSuccess() {
+                // Command successful! Code isn't necessarily needed here,
+                // Unless you want to update the UI or add logging statements.
+                Log.d(TAG, "Add service success: "+ Long.toString(SystemClock.elapsedRealtime()));
+            }
+
+            @Override
+            public void onFailure(int reasonCode) {
+                // Command failed.  Check for P2P_UNSUPPORTED, ERROR, or BUSY
+                String reason;
+                switch(reasonCode){
+                    case WifiP2pManager.P2P_UNSUPPORTED:
+                        reason = "WiFi P2P is not supported on this device.";
+                        break;
+                    case WifiP2pManager.BUSY:
+                        reason = "Framework is busy and unable to service this request.";
+                        break;
+                    case WifiP2pManager.ERROR:
+                        reason = "Internal Error.";
+                        break;
+                    default:
+                        reason = "Undefined failure error code: "+reasonCode;
+                }
+                Log.d(TAG, "Add service failed:" + reason);
+            }
+        });
     }
 
     private void sendNotification(String title, String msg) {
