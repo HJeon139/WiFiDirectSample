@@ -296,9 +296,23 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
                     }
 
                     @Override
-                    public void onFailure(int reason) {
-                        sendNotification("Micronet Status Update:", "Connection Failed... Retry?");
-                        Log.d(WiFiDirectActivity.TAG, "Connection Failed");
+                    public void onFailure(int reasonCode) {
+                        String reason;
+                        switch(reasonCode) {
+                            case WifiP2pManager.P2P_UNSUPPORTED:
+                                reason = "WiFi P2P is not supported on this device.";
+                                break;
+                            case WifiP2pManager.BUSY:
+                                reason = "Framework is busy and unable to service this request.";
+                                break;
+                            case WifiP2pManager.ERROR:
+                                reason = "Internal Error.";
+                                break;
+                            default:
+                                reason = "Undefined failure error code: " + reasonCode;
+                        }
+                        sendNotification("Micronet Status Update:", "Connection Failed: "+reason);
+                        Log.d(WiFiDirectActivity.TAG, "Connection Failed: "+reason);
                     }
                 });
 
