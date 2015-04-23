@@ -115,7 +115,7 @@ public class PassiveScheduler extends IntentService implements WifiP2pManager.Ch
     protected void onHandleIntent(Intent intent) {
         Log.d(WiFiDirectActivity.TAG, "Passive: Starting...");
 
-        register();
+        //register();
 
         sendNotification(NOTE_HEAD, "Passive mode active");
         //passive stuff
